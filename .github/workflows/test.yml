@@ -7,7 +7,7 @@ on:
 
 jobs:
   terratest:
-    runs-on: ubuntu-focal
+    runs-on: ubuntu-20.04
     steps:
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
