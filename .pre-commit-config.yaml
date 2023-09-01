@@ -11,4 +11,6 @@ repos:
       - id: terraform_tfsec
       - id: terraform_validate
       - id: terrascan
+        args:
+          - --args=--non-recursive
       - id: tfupdate
