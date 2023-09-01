@@ -61,7 +61,7 @@ func (k *KindCluster) EnvVars() map[string]string {
 	}
 }
 
-func TestBasicExample(t *testing.T) {
+func TestSelectExample(t *testing.T) {
 	cluster := NewKindCluster(t)
 
 	cluster.Create()
