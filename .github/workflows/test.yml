@@ -13,9 +13,9 @@ jobs:
       #               will not run inside GHA such as Percona XtraDB Cluster.
       - name: Run IPv6 workarounds
         run: |
-          sudo sysctl -w net.ipv6.conf.all.disable_ipv6=0
-          sudo sysctl -w net.ipv6.conf.default.disable_ipv6=0
-          sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=0
+          sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+          sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+          sudo sysctl -w net.ipv6.conf.lo.disable_ipv6=1
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3

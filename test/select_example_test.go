@@ -36,8 +36,9 @@ func NewKindCluster(t *testing.T, image string) *KindCluster {
 	clusterName := fmt.Sprintf("kind-%s", uniqueID)
 
 	return &KindCluster{
-		Name: clusterName,
-		T:    t,
+		Name:  clusterName,
+		Image: image,
+		T:     t,
 	}
 }
 
