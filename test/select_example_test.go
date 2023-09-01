@@ -26,11 +26,12 @@ import (
 )
 
 type KindCluster struct {
-	Name string
+	Name  string
+	Image string
 	*testing.T
 }
 
-func NewKindCluster(t *testing.T) *KindCluster {
+func NewKindCluster(t *testing.T, image string) *KindCluster {
 	uniqueID := strings.ToLower(random.UniqueId())
 	clusterName := fmt.Sprintf("kind-%s", uniqueID)
 
@@ -43,7 +44,7 @@ func NewKindCluster(t *testing.T) *KindCluster {
 func (k *KindCluster) Create() {
 	shell.RunCommand(k.T, shell.Command{
 		Command: "kind",
-		Args:    []string{"create", "cluster", "--name", k.Name},
+		Args:    []string{"create", "cluster", "--name", k.Name, "--image", k.Image},
 	})
 }
 
@@ -62,7 +63,7 @@ func (k *KindCluster) EnvVars() map[string]string {
 }
 
 func TestSelectExample(t *testing.T) {
-	cluster := NewKindCluster(t)
+	cluster := NewKindCluster(t, "kindest/node:v1.22.17")
 
 	cluster.Create()
 	defer cluster.Delete()
