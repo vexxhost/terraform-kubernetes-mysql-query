@@ -26,26 +26,21 @@ import (
 )
 
 type KindCluster struct {
-	Name  string
-	Image string
+	Name string
 	*testing.T
 }
 
-func NewKindCluster(t *testing.T, image string) *KindCluster {
-	uniqueID := strings.ToLower(random.UniqueId())
-	clusterName := fmt.Sprintf("kind-%s", uniqueID)
-
+func NewKindCluster(t *testing.T) *KindCluster {
 	return &KindCluster{
-		Name:  clusterName,
-		Image: image,
-		T:     t,
+		Name: strings.ToLower(random.UniqueId()),
+		T:    t,
 	}
 }
 
 func (k *KindCluster) Create() {
 	shell.RunCommand(k.T, shell.Command{
 		Command: "kind",
-		Args:    []string{"create", "cluster", "--name", k.Name, "--image", k.Image},
+		Args:    []string{"create", "cluster", "--name", k.Name},
 	})
 }
 
@@ -64,7 +59,7 @@ func (k *KindCluster) EnvVars() map[string]string {
 }
 
 func TestSelectExample(t *testing.T) {
-	cluster := NewKindCluster(t, "kindest/node:v1.22.17")
+	cluster := NewKindCluster(t)
 
 	cluster.Create()
 	defer cluster.Delete()
@@ -75,9 +70,5 @@ func TestSelectExample(t *testing.T) {
 	})
 	defer terraform.Destroy(t, options)
 
-	options.Targets = []string{"helm_release.pxc_operator"}
 	terraform.InitAndApply(t, options)
-
-	options.Targets = []string{}
-	terraform.Apply(t, options)
 }

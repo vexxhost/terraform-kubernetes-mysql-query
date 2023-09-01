@@ -12,56 +12,83 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-// TODO: We should build a Terraform module which handles/manages the creation
-//       of database, but for now we just deploy a simple container.
-resource "helm_release" "pxc_operator" {
-  name      = "pxc-operator"
-  namespace = "default"
+resource "kubernetes_service" "mariadb" {
+  metadata {
+    generate_name = "mariadb-"
+    namespace     = "default"
+  }
 
-  repository = "https://percona.github.io/percona-helm-charts"
-  chart      = "pxc-operator"
-  version    = "1.13.1"
-}
-resource "kubernetes_manifest" "pxc_cluster" {
-  depends_on = [
-    helm_release.pxc_operator
-  ]
-
-  manifest = {
-    apiVersion = "pxc.percona.com/v1"
-    kind       = "PerconaXtraDBCluster"
-    metadata = {
-      name      = "database"
-      namespace = helm_release.pxc_operator.metadata[0].namespace
+  spec {
+    selector = {
+      app = "mariadb"
     }
-    spec = {
-      allowUnsafeConfigurations = true
-      crVersion                 = "1.13.0"
-      haproxy = {
-        enabled = true
-        size    = 1
-        image   = "percona/percona-xtradb-cluster-operator:1.13.0-haproxy"
+
+    port {
+      port        = 3306
+      target_port = 3306
+    }
+  }
+}
+
+resource "kubernetes_secret" "mariadb" {
+  metadata {
+    generate_name = "mariadb-"
+    namespace     = kubernetes_service.mariadb.metadata[0].namespace
+  }
+
+  data = {
+    root = "root123"
+  }
+}
+
+resource "kubernetes_stateful_set" "mariadb" {
+  metadata {
+    generate_name = "mariadb-"
+    namespace     = kubernetes_service.mariadb.metadata[0].namespace
+  }
+
+  spec {
+    replicas     = 1
+    service_name = kubernetes_service.mariadb.metadata[0].name
+
+    selector {
+      match_labels = {
+        app = "mariadb"
       }
-      pxc = {
-        size  = 1
-        image = "percona/percona-xtradb-cluster:5.7.39-31.61"
-        volumeSpec = {
-          persistentVolumeClaim = {
-            resources = {
-              requests = {
-                storage = "5G"
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "mariadb"
+        }
+      }
+
+      spec {
+        container {
+          name  = "mariadb"
+          image = "mariadb:11"
+
+          env {
+            name = "MYSQL_ROOT_PASSWORD"
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.mariadb.metadata[0].name
+                key  = "root"
               }
+            }
+          }
+
+          readiness_probe {
+            initial_delay_seconds = 5
+            period_seconds        = 5
+
+            tcp_socket {
+              port = 3306
             }
           }
         }
       }
-    }
-  }
-
-  wait {
-    condition {
-      type   = "ready"
-      status = "True"
     }
   }
 }
@@ -69,10 +96,10 @@ resource "kubernetes_manifest" "pxc_cluster" {
 module "select" {
   source = "../../"
 
-  hostname                  = "${kubernetes_manifest.pxc_cluster.manifest.metadata.name}-haproxy.${kubernetes_manifest.pxc_cluster.manifest.metadata.namespace}"
+  hostname                  = kubernetes_stateful_set.mariadb.spec[0].service_name
   job_name                  = "mysql-select-test"
-  job_namespace             = kubernetes_manifest.pxc_cluster.manifest.metadata.namespace
-  root_password_secret_name = "${kubernetes_manifest.pxc_cluster.manifest.metadata.name}-secrets"
+  job_namespace             = kubernetes_stateful_set.mariadb.metadata[0].namespace
+  root_password_secret_name = kubernetes_secret.mariadb.metadata[0].name
 
   query = <<-EOT
     SELECT 1;

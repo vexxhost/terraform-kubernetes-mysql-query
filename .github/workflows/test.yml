@@ -7,11 +7,8 @@ on:
 
 jobs:
   terratest:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-
       - uses: cloudposse/github-action-terratest@main
         with:
           sourceDir: test
