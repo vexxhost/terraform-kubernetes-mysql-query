@@ -67,7 +67,7 @@ resource "kubernetes_manifest" "pxc_cluster" {
 }
 
 module "select" {
-  source = "../../../terraform-kubernetes-mysql-query"
+  source = "../../"
 
   hostname                  = "${kubernetes_manifest.pxc_cluster.manifest.metadata.name}-haproxy.${kubernetes_manifest.pxc_cluster.manifest.metadata.namespace}"
   job_name                  = "mysql-select-test"
