@@ -15,51 +15,14 @@
 package test
 
 import (
-	"fmt"
-	"os"
-	"strings"
 	"testing"
 
-	"github.com/gruntwork-io/terratest/modules/random"
-	"github.com/gruntwork-io/terratest/modules/shell"
 	"github.com/gruntwork-io/terratest/modules/terraform"
+	"github.com/vexxhost/terratest-toolkit/kind"
 )
 
-type KindCluster struct {
-	Name string
-	*testing.T
-}
-
-func NewKindCluster(t *testing.T) *KindCluster {
-	return &KindCluster{
-		Name: strings.ToLower(random.UniqueId()),
-		T:    t,
-	}
-}
-
-func (k *KindCluster) Create() {
-	shell.RunCommand(k.T, shell.Command{
-		Command: "kind",
-		Args:    []string{"create", "cluster", "--name", k.Name},
-	})
-}
-
-func (k *KindCluster) Delete() {
-	shell.RunCommand(k.T, shell.Command{
-		Command: "kind",
-		Args:    []string{"delete", "cluster", "--name", k.Name},
-	})
-}
-
-func (k *KindCluster) EnvVars() map[string]string {
-	return map[string]string{
-		"KUBE_CONFIG_PATH": fmt.Sprintf("%s/.kube/config", os.Getenv("HOME")),
-		"KUBE_CTX":         fmt.Sprintf("kind-%s", k.Name),
-	}
-}
-
 func TestSelectExample(t *testing.T) {
-	cluster := NewKindCluster(t)
+	cluster := kind.NewCluster(t)
 
 	cluster.Create()
 	defer cluster.Delete()

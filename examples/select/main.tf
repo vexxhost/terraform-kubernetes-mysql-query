@@ -12,94 +12,45 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-resource "kubernetes_service" "mariadb" {
-  metadata {
-    generate_name = "mariadb-"
-    namespace     = "default"
-  }
-
-  spec {
-    selector = {
-      app = "mariadb"
-    }
-
-    port {
-      port        = 3306
-      target_port = 3306
+terraform {
+  required_providers {
+    random = {
+      source  = "hashicorp/random"
+      version = "3.5.1"
     }
   }
 }
 
-resource "kubernetes_secret" "mariadb" {
-  metadata {
-    generate_name = "mariadb-"
-    namespace     = kubernetes_service.mariadb.metadata[0].namespace
-  }
+resource "random_password" "password" {
+  length = 32
+}
 
-  data = {
-    root = "root123"
+resource "kubernetes_namespace" "namespace" {
+  metadata {
+    name = "infra"
   }
 }
 
-resource "kubernetes_stateful_set" "mariadb" {
-  metadata {
-    generate_name = "mariadb-"
-    namespace     = kubernetes_service.mariadb.metadata[0].namespace
-  }
+module "mariadb" {
+  source  = "vexxhost/mariadb/kubernetes"
+  version = "0.1.1"
 
-  spec {
-    replicas     = 1
-    service_name = kubernetes_service.mariadb.metadata[0].name
-
-    selector {
-      match_labels = {
-        app = "mariadb"
-      }
-    }
-
-    template {
-      metadata {
-        labels = {
-          app = "mariadb"
-        }
-      }
-
-      spec {
-        container {
-          name  = "mariadb"
-          image = "mariadb:11"
-
-          env {
-            name = "MYSQL_ROOT_PASSWORD"
-            value_from {
-              secret_key_ref {
-                name = kubernetes_secret.mariadb.metadata[0].name
-                key  = "root"
-              }
-            }
-          }
-
-          readiness_probe {
-            initial_delay_seconds = 5
-            period_seconds        = 5
-
-            tcp_socket {
-              port = 3306
-            }
-          }
-        }
-      }
-    }
-  }
+  name          = "mariadb"
+  namespace     = kubernetes_namespace.namespace.metadata[0].name
+  root_password = random_password.password.result
 }
 
 module "select" {
   source = "../../"
 
-  hostname                  = kubernetes_stateful_set.mariadb.spec[0].service_name
+  depends_on = [
+    module.mariadb
+  ]
+
+  hostname                  = "mariadb"
   job_name                  = "mysql-select-test"
-  job_namespace             = kubernetes_stateful_set.mariadb.metadata[0].namespace
-  root_password_secret_name = kubernetes_secret.mariadb.metadata[0].name
+  job_namespace             = kubernetes_namespace.namespace.metadata[0].name
+  root_password_secret_name = "mariadb"
 
   query = <<-EOT
     SELECT 1;

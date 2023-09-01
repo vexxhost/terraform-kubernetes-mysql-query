@@ -1,8 +1,11 @@
-module github.com/vexxhost/terraform-kuberentes-mysql-query
+module github.com/vexxhost/terraform-kubernetes-mysql-query
 
 go 1.20
 
-require github.com/gruntwork-io/terratest v0.43.13
+require (
+	github.com/gruntwork-io/terratest v0.43.13
+	github.com/vexxhost/terratest-toolkit v0.0.0-20230901051311-0e620fd492a0
+)
 
 require (
 	cloud.google.com/go v0.105.0 // indirect
@@ -37,7 +40,7 @@ require (
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/stretchr/testify v1.8.4 // indirect
+	github.com/stretchr/testify v1.8.1 // indirect
 	github.com/tmccombs/hcl2json v0.3.3 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/zclconf/go-cty v1.9.1 // indirect
